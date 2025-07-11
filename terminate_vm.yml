@@ -61,17 +61,3 @@
         record_name: "{{ f_vm_name }}"
       include_tasks: termination/termination_dns_management.yml
       tags: [print_action]
-
-
-    ## These variables come from the "TERMINATE A VIRTUAL MACHINE" task:
-    ##   * f_vm_exists
-    ##   * reg_virtual_machine_object
-    - name: "           UNREGISTER VIRTUAL MACHINE FROM RED HAT SATELLITE         "
-      vars:
-         username: "{{ f_vc_username }}"
-         password: "{{ f_vc_password }}"
-         vm_name: "{{ f_vm_name_fqdn }}"
-      include_tasks: termination/termination_rhsatellite_management.yml
-      when: (f_vm_exists) and (reg_virtual_machine_object.instance.summary.config.guestId is regex("^rhel.*$|^ubuntu.*$"))
-      tags: [print_action]
-      

@@ -48,15 +48,6 @@ LDAP_PORT: 389
 LDAP_VM_BASE: <Your LDAP Server Base>
 
 ##
-## Default values for Red Hat Satellite
-SATELLITE_USERNAME: "<Your RH Satellite User>"
-SATELLITE_PASSWORD: ""
-SATELLITE_SERVER: "<Your RH Satellite URL>"
-SATELLITE_PORT: 443
-SATELLITE_URL: "https://{{ SATELLITE_SERVER }}/api/v2"
-SATELLITE_KATELLO_URI: "/katello/api/v2"
-
-##
 ## Default values for Men & Mice
 MM_SERVER: <Your Men&Mice Server URL>
 MM_PORT: 443

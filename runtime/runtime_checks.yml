@@ -35,15 +35,6 @@
     timeout: 3 
 
 
-- name: "Check network connectivity with Red Hat Satellite: {{ SATELLITE_SERVER }}"
-  wait_for:
-    host: "{{ SATELLITE_SERVER }}"
-    port: "{{ SATELLITE_PORT }}"
-    state: started
-    delay: 0
-    timeout: 3 
-
-
 - name: "Check network connectivity with Men & Mice: {{ MM_SERVER }}"
   wait_for:
     host: "{{ MM_SERVER }}"
