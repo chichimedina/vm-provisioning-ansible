@@ -1,0 +1,13 @@
+---
+
+##
+## Get information about a Datastore (give a Cluster name)
+- vmware_datastore_info:
+    cluster: "{{ _vc_cluster }}"
+    hostname: "{{ _vc_hostname }}"
+    username: "{{ _vc_username }}"
+    password: "{{ _vc_password }}"
+    validate_certs: no
+  delegate_to: localhost
+  register: reg_datastore_info
+

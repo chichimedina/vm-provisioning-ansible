@@ -1,0 +1,16 @@
+---
+
+##
+## Destroy Virtual Machine by setting state to "absent"
+- vmware_guest:
+    datacenter: "{{ _vc_datacenter }}"
+    hostname: "{{ _vc_hostname }}"
+    username: "{{ _vc_username }}"
+    password: "{{ _vc_password }}"
+    validate_certs: no
+    folder: "{{ _vm_folder }}"
+    name: "{{ _vm_name }}"
+    state: absent
+  delegate_to: localhost
+  register: reg_destroyed_virtual_machine
+

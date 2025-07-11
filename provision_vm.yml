@@ -1,0 +1,117 @@
+---
+- name: " ======    VIRTUAL MACHINE PROVISIONING    ======"
+  hosts: localhost
+  gather_facts: True
+
+  vars_files:
+    - vars/environment.yml
+
+  tasks:
+
+    ## Build "facts" based on command line input to be used across playbooks
+    - name: Set up Runtime Facts 
+      vars:
+        _process: provisioning
+        _vc_datacenter: "{{ vc_datacenter if vc_datacenter is defined }}"
+        _vc_cluster: "{{ vc_cluster if vc_cluster is defined }}"
+        _vc_hostname: "{{ vc_hostname if vc_hostname is defined }}"
+        _vc_username: "{{ vc_username if vc_username is defined }}"
+        _vc_password: "{{ vc_password if vc_password is defined }}"
+        _vm_name: "{{ hostname if hostname is defined }}"
+        _num_cpu: "{{ num_cpu if num_cpu is defined }}"
+        _memory: "{{ memory if memory is defined }}"
+        _default_net: "{{ default_net if default_net is defined }}"
+        _extra_net: "{{ extra_net if extra_net is defined }}"
+        _extra_disk: "{{ extra_disk if extra_disk is defined }}"
+        _puppet_master: "{{ ppmaster if ppmaster is defined }}"
+        _notes: "{{ notes if notes is defined }}"
+        _template: "{{ template }}"
+        _vm_custom_settings: "{{ vm_custom_settings if vm_custom_settings is defined }}"
+      include_tasks: runtime/runtime_facts.yml
+
+
+    ## Run basic checks (services availability, parameters syntax, ...) prior moving forward
+    - include_tasks: runtime/runtime_checks.yml
+      vars:
+        _process: provisioning
+
+
+    - name: "========================    VIRTUAL MACHINE PROVISIONING    ========================"
+      debug:
+        msg: "      \n\nProvisioning of {{ f_vm_name_fqdn }}      \n\n"
+      tags: [print_action]
+
+
+    - name: "           SET UP DNS ENTRIES FOR VIRTUAL MACHINE          "
+      vars:
+        username: "{{ f_vc_username }}"
+        password: "{{ f_vc_password }}"
+        record_name: "{{ f_vm_name }}"
+        record_type: A
+      include_tasks: provisioning/provisioning_dns_management.yml
+      loop: "{{ f_vm_networks | flatten }}"
+      loop_control:
+        loop_var: master_item
+      tags: [print_action]
+
+
+    - name: "           SET UP *CUSTOM* DNS ENTRY FOR VIRTUAL MACHINE          "
+      vars:
+        username: "{{ f_vc_username }}"
+        password: "{{ f_vc_password }}"
+        record_name: "{{ NET_DNS_CUSTOM_RECORD }}{{ hostname }}"
+        record_type: CNAME
+        record_data: "{{ hostname }}"
+      include_tasks: provisioning/provisioning_extra_dns_management.yml
+      when: (dns_entry_custom_enabled is defined) and (dns_entry_custom_enabled | bool is true)
+      tags: [print_action]
+
+
+    - name: "           SET UP A NEW VIRTUAL MACHINE          "
+      vars:
+         vc_datacenter: "{{ f_vc_datacenter }}"
+         vc_cluster: "{{ f_vc_cluster }}"
+         vc_hostname: "{{ f_vc_hostname }}"
+         vc_username: "{{ f_vc_username }}"
+         vc_password: "{{ f_vc_password }}"
+         vc_template: "{{ f_template }}"
+         vm_name_fqdn: "{{ f_vm_name_fqdn }}"
+         vm_name: "{{ f_vm_name }}"
+         vm_folder: "{{ folder }}"
+         vm_num_cpu: "{{ f_vm_num_cpu }}"
+         vm_memory: "{{ f_vm_memory }}"
+         vm_network: "{{ f_vm_network_setup }}"
+         vm_puppetmaster_ip: "{{ f_puppet_master_ip }}"
+         vm_notes: "{{ f_vm_notes }}"
+         vm_custom_settings: "{{ f_vm_custom_settings }}"
+      include_tasks: provisioning/provisioning_vm_management.yml
+      tags: [print_action]
+      
+
+    - name: "           ADD EXTRA DISKS TO VIRTUAL MACHINE          "
+      vars:
+        vc_hostname: "{{ f_vc_hostname }}"
+        vc_username: "{{ f_vc_username }}"
+        vc_password: "{{ f_vc_password }}"
+        vc_cluster: "{{ f_vc_cluster }}"
+      include_tasks: provisioning/provisioning_extra_disk_management.yml
+      loop: "{{ f_extra_disk }}"
+      loop_control:
+        loop_var: master_item
+        index_var: master_index
+      when: f_extra_disk is defined
+      tags: [print_action]
+
+
+    - name: "          POWER ON VIRTUAL MACHINE          "
+      include_role:
+        name: vmware 
+        tasks_from: vmware_vm_power_on_off.yml
+      vars:
+        _vc_hostname: "{{ f_vc_hostname }}"
+        _vc_username: "{{ f_vc_username }}"
+        _vc_password: "{{ f_vc_password }}"
+        _vm_name: "{{ f_vm_name_fqdn }}"
+        _vm_folder: "{{ folder }}"
+        _vm_power_state: "{{ VC_VM_POWER_ON_STATE }}"
+      tags: [print_action]

@@ -1,0 +1,29 @@
+---
+
+## Check #1: Does '{{ vm_name }}' virtual machine exist in Active Directory?"
+- include_role:
+    name: ldap 
+    tasks_from: ldap_search_entry.yml
+  vars:
+    _username: "{{ username }}"
+    _password: "{{ password }}"
+    _dn: "CN={{ vm_name }},{{ LDAP_VM_BASE }}"
+
+
+- debug:
+    msg: "\n[WARNING] No virtual machine '{{ vm_name }}' found in Active Directory. No further action needed.\n"
+  when: not f_ldap_entry_exists
+  tags: [print_action]
+
+
+## Deleting '{{ vm_name }}' virtual machine in Active Directory?"
+- name: ">> Deleting '{{ vm_name }}' virtual machine in Active Directory"
+  include_role:
+    name: ldap
+    tasks_from: ldap_delete_entry.yml
+  vars:
+    _username: "{{ username }}"
+    _password: "{{ password }}"
+    _dn: "CN={{ vm_name }},{{ LDAP_VM_BASE }}"
+  when: f_ldap_entry_exists
+  tags: [print_action]

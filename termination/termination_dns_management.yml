@@ -1,0 +1,29 @@
+---
+
+## Check #1: Does '{{ record_name }}' record exist?"
+- include_role:
+    name: mmice 
+    tasks_from: mmice_record_name_exists.yml
+  vars:
+    _username: "{{ username }}"
+    _password: "{{ password }}"
+    _record_name: "^{{ record_name }}$|^{{ record_name }}--[\\w\\d]*"
+
+
+- debug:
+    msg: "\n[WARNING] No DNS record '{{ record_name }}' found in Men & Mice. No further action needed.\n"
+  when: not f_record_name_exists
+  tags: [print_action]
+
+
+- include_role:
+    name: mmice
+    tasks_from: mmice_unregister_by_data.yml
+  vars:
+    _username: "{{ username }}"
+    _password: "{{ password }}"
+    _record_data: "{{ item.data }}"
+    _task_header: ">> Delete DNS record '{{ item.name }}' and any related entries ..."
+  loop: "{{ reg_record_name_object.json.result.dnsRecords | list }}"
+  when: f_record_name_exists
+

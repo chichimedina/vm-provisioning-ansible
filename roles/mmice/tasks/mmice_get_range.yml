@@ -1,0 +1,25 @@
+---
+
+##
+## Display a task header only when "_task_header" is defined OR has some content 
+- name: "{{ _task_header }}"
+  debug:
+    msg: ""
+  when: (_task_header is defined) and (_task_header | length > 0)
+  tags: [print_action]
+
+
+##
+## Get the range/subnet from a given IP Address
+- uri:
+    url: "{{ MM_URL }}/{{ local_uri }}"
+    user: "{{ _username }}"
+    password: "{{ _password }}"
+    force_basic_auth: yes
+    validate_certs: no
+    method: GET
+    status_code: 200
+  register: reg_vm_net_range
+  vars:
+    local_uri: "IPAMRecords/{{ _ip_address }}/Range"
+

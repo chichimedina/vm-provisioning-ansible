@@ -1,0 +1,28 @@
+---
+
+##
+## Display a task header only when "_task_header" is defined OR has some content 
+- name: "{{ _task_header }}"
+  debug:
+    msg: ""
+  when: (_task_header is defined) and (_task_header | length > 0)
+  tags: [print_action]
+
+
+##
+## Determine the existance of a DNS record by looking up the "data" attribute
+- uri:
+    url: "{{ MM_URL }}/{{ local_uri }}"
+    user: "{{ _username }}"
+    password: "{{ _password }}"
+    force_basic_auth: yes
+    validate_certs: no
+    method: GET
+    status_code: 200
+  register: reg_record_data_object
+  vars:
+    local_uri: "DNSZones/{{ NET_DOMAIN }}/DNSRecords?filter=\"data\":\"{{ _record_data }}\""
+
+
+- set_fact: f_record_data_exists="{{ False if reg_record_data_object.json.result.totalResults == 0 else True }}"
+

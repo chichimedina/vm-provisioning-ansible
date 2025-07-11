@@ -1,0 +1,77 @@
+---
+- name: " ======    VM TERMINATION PIPELINE    ======"
+  hosts: localhost
+  gather_facts: True
+
+  vars_files:
+    - vars/environment.yml
+
+  tasks:
+
+    ## Build "facts" based on command line input to be used across playbooks
+    - name: Set up Runtime Facts 
+      vars:   
+        _process: termination
+        _vc_datacenter: "{{ vc_datacenter if vc_datacenter is defined }}"
+        _vc_cluster: "{{ vc_cluster if vc_cluster is defined }}"
+        _vc_hostname: "{{ vc_hostname if vc_hostname is defined }}"
+        _vc_username: "{{ vc_username if vc_username is defined }}"
+        _vc_password: "{{ vc_password if vc_password is defined }}"
+        _vm_name: "{{ hostname }}"
+      include_tasks: runtime/runtime_facts.yml
+
+
+    ## Run basic checks (services availability, parameters syntax, ...) prior moving forward
+    - include_tasks: runtime/runtime_checks.yml
+      vars:
+        _process: termination
+
+
+    - name: "========================    VIRTUAL MACHINE TERMINATION    ========================"
+      debug:  
+        msg: "      \n\nTermination of {{ f_vm_name_fqdn }}      \n\n"   
+      tags: [print_action]
+
+
+    - name: "           TERMINATE VIRTUAL MACHINE          "
+      vars:
+         vc_datacenter: "{{ f_vc_datacenter }}"
+         vc_hostname: "{{ f_vc_hostname }}"
+         vc_username: "{{ f_vc_username }}"
+         vc_password: "{{ f_vc_password }}"
+         vm_name: "{{ f_vm_name_fqdn }}"
+         vm_folder: "{{ folder }}"
+      include_tasks: termination/termination_vm_management.yml
+      tags: [print_action]
+
+
+    - name: "           UNREGISTER VIRTUAL MACHINE FROM ACTIVE DIRECTORY         "
+      vars:
+        username: "{{ f_vc_username }}"
+        password: "{{ f_vc_password }}"
+        vm_name: "{{ f_vm_name }}"
+      include_tasks: termination/termination_ldap_management.yml
+      tags: [print_action]
+
+
+    - name: "           DELETE DNS ENTRIES FOR VIRTUAL MACHINE          "
+      vars:
+        username: "{{ f_vc_username }}"
+        password: "{{ f_vc_password }}"
+        record_name: "{{ f_vm_name }}"
+      include_tasks: termination/termination_dns_management.yml
+      tags: [print_action]
+
+
+    ## These variables come from the "TERMINATE A VIRTUAL MACHINE" task:
+    ##   * f_vm_exists
+    ##   * reg_virtual_machine_object
+    - name: "           UNREGISTER VIRTUAL MACHINE FROM RED HAT SATELLITE         "
+      vars:
+         username: "{{ f_vc_username }}"
+         password: "{{ f_vc_password }}"
+         vm_name: "{{ f_vm_name_fqdn }}"
+      include_tasks: termination/termination_rhsatellite_management.yml
+      when: (f_vm_exists) and (reg_virtual_machine_object.instance.summary.config.guestId is regex("^rhel.*$|^ubuntu.*$"))
+      tags: [print_action]
+      

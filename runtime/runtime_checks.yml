@@ -1,0 +1,100 @@
+---
+
+- fail:
+    msg: "\n** [ERROR] ** No password (via \"vc_passsword\") has been provided. Please double check.\n"
+  when: f_vc_password | length == 0
+
+
+- fail:
+    msg: "\n** [ERROR] ** Virtual machine name hasn't been provided ('hostname' parameter). Please double check.\n"
+  when: f_vm_name | length == 0
+
+
+- fail:
+    msg: "\n** [ERROR] ** Virtual machine folder hasn't been provided ('folder' parameter). Please double check.\n"
+  when: (folder is undefined) or (folder | length == 0)
+
+
+
+- name: "Check network connectivity with Puppet master: {{ f_puppet_master_server }}"
+  wait_for:
+    host: "{{ f_puppet_master_server }}"
+    port: "{{ BMA_PPMASTER_PORT }}"
+    state: started
+    delay: 0
+    timeout: 3 
+  when: _process == "provisioning"
+
+
+- name: "Check network connectivity with Active Directory: {{ LDAP_SERVER }}"
+  wait_for:
+    host: "{{ LDAP_SERVER }}"
+    port: "{{ LDAP_PORT }}"
+    state: started
+    delay: 0
+    timeout: 3 
+
+
+- name: "Check network connectivity with Red Hat Satellite: {{ SATELLITE_SERVER }}"
+  wait_for:
+    host: "{{ SATELLITE_SERVER }}"
+    port: "{{ SATELLITE_PORT }}"
+    state: started
+    delay: 0
+    timeout: 3 
+
+
+- name: "Check network connectivity with Men & Mice: {{ MM_SERVER }}"
+  wait_for:
+    host: "{{ MM_SERVER }}"
+    port: "{{ MM_PORT }}"
+    state: started
+    delay: 0
+    timeout: 3 
+
+
+- name: "Check network connectivity with vCenter: {{ VC_HOSTNAME }}"
+  wait_for:
+    host: "{{ VC_HOSTNAME }}"
+    port: "{{ VC_PORT }}"
+    state: started
+    delay: 0
+    timeout: 3 
+
+
+
+- block:
+
+    - fail:
+        msg: "\n** [ERROR] ** vCenter template name hasn't been provided ('template' parameter). Please double check.\n"
+      when: (template is undefined ) or (template | length == 0)
+
+    - fail: 
+        msg: "\n** [ERROR] ** Wrong JSON syntaxis in the provided network setup: {{ f_vm_networks }}\n"
+      when: f_vm_networks | type_debug != "list"
+
+    - name: Check IP addresses passed as parameters
+      fail: 
+        msg: "\n** [ERROR] ** IP '{{ item.ip }}' is not valid. Please double check.\n"
+      when: (item.ip is defined) and not (item.ip | ipaddr)
+      loop: "{{ f_vm_networks }}"
+
+    - name: Check extra disks
+      block:
+
+         - fail:
+             msg: "\n** [ERROR] ** Extra disk parameter (extra_disk) can have up to three (3) disks. Please double check.\n"
+           when: f_extra_disk | length > 3
+
+         - fail: 
+            msg: "\nExtra disk #{{ index + 1 }} with '{{ item | upper }}' size does not follow proper syntax. Valid units are: KB, MB, GB, TB. Please double check.\n"
+           when: not item is regex('^[\d]+(KB|MB|GB|TB)$')
+           loop: "{{ f_extra_disk }}"
+           loop_control:
+             index_var: index
+
+      when: (extra_disk is defined) and (extra_disk | length > 0)
+
+  when: _process == "provisioning"
+
+

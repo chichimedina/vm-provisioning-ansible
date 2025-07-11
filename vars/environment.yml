@@ -1,0 +1,106 @@
+environment_networks:
+  - name: example-net-1
+    subnets:
+      - name: <Arbitrary name, i.e. example-net-1-a>
+        vmw_netname: <vCenter Network Name>
+      - name: <Arbitrary name, i.e. example-net-1-b>
+        vmw_netname: <vCenter Network Name>
+  - name: example-net-2
+    subnets:
+      - name: <Arbitrary name, i.e. example-net-2>
+        vmw_netname: <vCenter Network Name>
+        dns_suffix: '--example-net-2'
+
+MSWINDOWS_PRODUCT_ID:
+  - name: <Arbitrary Identifier>
+    key: <Your MS Windows Product ID>
+  - name: <Arbitrary Identifier>
+    key: <Your MS Windows Product ID>
+
+
+TEMPLATE_LOCATION:
+  - name: example-template-path-1
+    location: "<Path to your vCenter Template folder>"
+  - name: example-template-path-2
+    location: "<Path to your vCenter Template folder>"
+
+
+VM_DEFAULT_NETWORK: "{ 'network':'standard' }"
+
+NET_DOMAIN: <your domain>
+NET_DNS_CUSTOM_RECORD: "example."  ## This setting is optional
+NET_DNS:
+  - 10.0.0.1   ## Example
+  - 10.0.0.2   ## Example
+
+
+##
+## Default values for Puppet master
+PPMASTER_SERVER: "<Your Puppet Master URL>"
+PPMASTER_PORT: 8140
+
+##
+## Default values for Active Directory
+LDAP_USERNAME: "<Your LDAP User>"
+LDAP_PASSWORD: ""
+LDAP_SERVER: <Your LDAP Server URL>
+LDAP_PORT: 389
+LDAP_VM_BASE: <Your LDAP Server Base>
+
+##
+## Default values for Red Hat Satellite
+SATELLITE_USERNAME: "<Your RH Satellite User>"
+SATELLITE_PASSWORD: ""
+SATELLITE_SERVER: "<Your RH Satellite URL>"
+SATELLITE_PORT: 443
+SATELLITE_URL: "https://{{ SATELLITE_SERVER }}/api/v2"
+SATELLITE_KATELLO_URI: "/katello/api/v2"
+
+##
+## Default values for Men & Mice
+MM_SERVER: <Your Men&Mice Server URL>
+MM_PORT: 443
+MM_URL: "https://{{ MM_SERVER }}/mmws/api"
+MM_USERNAME: "<Your Men&Mice User>"
+MM_PASSWORD: ""
+
+##
+## Default values for vCenter and Virtual Machines
+VC_DATACENTER: "<Your vCenter Datacenter name>"
+VC_CLUSTER: "<Your vCenter Cluster name>"
+VC_HOSTNAME: "<Your vCenter URL>"
+VC_PORT: 443
+VC_USERNAME: "<Your vCenter User>"
+VC_PASSWORD: ""
+VC_VM_POWER_ON_STATE: "powered-on"
+VC_VM_POWER_OFF_STATE: "powered-off"
+VC_VM_HW_VERSION: 12
+VC_VM_FOLDER: "<Your Default VM Folder>"
+VC_TEMPLATE: "<Your Default VM Template>"
+VC_VM_WIN_PRODUCT_ID: "<Your Default MS Windows Product ID>"
+VC_VM_WIN_ORG_NAME: "<Your Organization Name>"
+VC_VM_NUM_CPU: 2
+VC_VM_MEMORY: 8192
+VC_NETWORK: "<Your Default vCenter Network>"
+VC_DATASTORE: "<Your Default vCenter Datastore>"
+VC_VM_NOTES: "Created with Template: <<TEMPLATE>>\n\nCreation Date: <<DATE>>\n\nCreated by: <<USER>>\n\nPuppet Master: <<PPMASTER>>\n\nNotes at Creation Time: \n<<NOTES>>"
+VC_VM_CUSTOM_PROPERTIES_DUMMY:
+  - key: vcpu.hotadd
+    value: 1
+  - key: mem.hotadd
+    value: 1
+VC_VM_CUSTOM_PROPERTIES:
+  - key: time.synchronize.continue
+    value: 0
+  - key: time.synchronize.restore
+    value: 0
+  - key: time.synchronize.resume.disk
+    value: 0
+  - key: time.synchronize.shrink
+    value: 0
+  - key: time.synchronize.tools.startup
+    value: 0
+  - key: time.synchronize.tools.enable
+    value: 0
+  - key: time.synchronize.resume.host
+    value: 0

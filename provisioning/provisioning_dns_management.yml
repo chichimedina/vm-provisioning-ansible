@@ -1,0 +1,123 @@
+---
+
+- set_fact:
+    record_type: "A"
+
+- name: ">> Setting up DNS record for '{{ master_item.network }}' Network Adapter"
+  debug:
+    msg: ""
+  tags: [print_action]
+
+
+- block:
+
+    ## CHECK: Verify the format of the provided IP Address ({{ master_item.ip }})"
+    - fail:
+        msg: "\nThe provided IP Address ({{ master_item.ip }}) isn't a valid one. Please double check.\n"
+      when: not (master_item.ip | ipaddr)
+
+    ## CHECK: Does '{{ master_item.ip }}' record exists?"
+    - include_role:
+        name: mmice
+        tasks_from: mmice_record_data_exists.yml
+      vars:
+        _username: "{{ username }}"
+        _password: "{{ password }}"
+        _record_data: "{{ master_item.ip }}"
+
+    ## "f_record_data_exists" variable is exported by "mmice_record_data_exists.yml"
+    - fail:
+        msg: "\nDNS record for '{{ master_item.ip }}' does exist in Men & Mice. This provisioning cannot continue.\n"
+      when: f_record_data_exists
+
+  when: master_item.ip is defined  
+
+
+## Getting Next Available IP Address For '{{ master_item.network }}' Network"
+- include_role:
+    name: mmice 
+    tasks_from: mmice_get_avail_ip.yml
+  vars:
+    _username: "{{ username }}"
+    _password: "{{ password }}"
+    _vm_network: "{{ master_item.network }}"
+    _networks: "{{ environment_networks }}"
+  when: master_item.ip is undefined
+
+
+- set_fact:
+    l_vm_ip_address: "{{ master_item.ip if master_item.ip is defined else reg_vm_ip_address.json.result.address }}"
+
+
+## Getting the Range/Subnet of the '{{ master_item.network }}' Network"
+- include_role:
+    name: mmice 
+    tasks_from: mmice_get_range.yml
+  vars:
+    _username: "{{ username }}"
+    _password: "{{ password }}"
+    _ip_address: "{{ l_vm_ip_address }}"
+
+
+## Getting the Gateway of the '{{ master_item.network }}' Network"
+- include_role:
+    name: mmice 
+    tasks_from: mmice_get_gateway.yml
+  vars:
+    _username: "{{ username }}"
+    _password: "{{ password }}"
+    _vm_network: "{{ reg_vm_net_range.json.result.range.name }}"
+
+
+- set_fact: vcenter_net="{{ environment_networks | json_query(jquery) | select() | list | first | first }}"
+  vars:
+    jquery: "[*].subnets[?name==`{{ reg_vm_net_range.json.result.range.name }}`].vmw_netname"
+
+
+- set_fact:
+    dns_suffix: "{{ master_item.dns_suffix if master_item.dns_suffix is defined else environment_networks | json_query(jquery) | select() | list | join | regex_replace(\"\\[|\\]|\\'\") }}"
+  vars:
+    jquery: "[*].subnets[?name==`{{ reg_vm_net_range.json.result.range.name }}`].dns_suffix"
+    
+
+## FINAL CHECK: Does '{{ record_name }}{{ dns_suffix }}' record exist?"
+- include_role:
+    name: mmice 
+    tasks_from: mmice_record_name_exists.yml
+  vars:
+    _username: "{{ username }}"
+    _password: "{{ password }}"
+    _record_name: "{{ record_name }}{{ dns_suffix }}"
+
+
+- fail:
+    msg: "\nDNS record for '{{ record_name }}' does exist in Men & Mice. This provisioning cannot continue.\n"
+  when: f_record_name_exists
+
+
+- set_fact: f_vm_network_setup="{{ f_vm_network_setup | default([]) }} + [ { 
+                                                                           'type':'static', 
+                                                                           'name':'{{ vcenter_net }}',
+                                                                           'ip':'{{ l_vm_ip_address }}',
+                                                                           'netmask':'{{ reg_vm_net_range.json.result.range.name | ipaddr('netmask') }}',
+                                                                           'gateway':'{{ reg_vm_net_gateway.json.result.ipamRecords[0].address }}',
+                                                                           'start_connected':True
+                                                                         } ]"
+
+
+- name: ">>>> Creating DNS record by using following data:"
+  debug:  
+    msg: "\nHostname: {{ record_name }}{{ dns_suffix }}\nIP: {{ l_vm_ip_address }}\nSubnet: {{ reg_vm_net_range.json.result.range.name }}\nvCenter Network: {{ vcenter_net }}\n"
+  tags: [print_action]
+
+
+- include_role:
+    name: mmice
+    tasks_from: mmice_register.yml
+  vars:
+    _username: "{{ username }}"
+    _password: "{{ password }}"
+    _record_name: "{{ record_name }}{{ dns_suffix }}"
+    _record_type: "{{ record_type }}"
+    _record_data: "{{ l_vm_ip_address }}"
+

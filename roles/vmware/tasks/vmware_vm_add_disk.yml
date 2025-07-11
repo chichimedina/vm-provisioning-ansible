@@ -1,0 +1,25 @@
+---
+
+##
+## Add disk(s) to a given virtual machine
+## This function identifies the virtual machine to work on by specifing _either_ of these parameters:
+##   vmoid         : If "moid" isn't set, then "name" and "folder" are expected to be set
+##   name / folder : If "name" AND "folder" aren't set, then "moid" is expected to be set
+- vmware_guest_disk:
+    datacenter: "{{ f_vc_datacenter }}"
+    hostname: "{{ _vc_hostname }}"
+    username: "{{ _vc_username }}"
+    password: "{{ _vc_password }}"
+    validate_certs: no
+    name: "{{ _vm_name if _vm_name is defined }}"
+    folder: "{{ _vm_folder if _vm_folder is defined }}"
+    moid: "{{ _vm_moid if _vm_moid is defined }}"
+    disk:   
+      - size: "{{ _size }}"
+        type: thin
+        state: present 
+        datastore: "{{ _datastore }}"
+        scsi_controller: "{{ _scsi_controller }}"
+        unit_number: "{{ _unit_number }}" 
+  delegate_to: localhost
+

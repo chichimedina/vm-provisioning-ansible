@@ -1,0 +1,16 @@
+---
+
+##
+## Get information of a Virtual Machine
+- vmware_guest_info:
+    datacenter: "{{ _vc_datacenter }}"
+    hostname: "{{ _vc_hostname }}"
+    username: "{{ _vc_username }}"
+    password: "{{ _vc_password }}"
+    validate_certs: no
+    schema: vsphere
+    name: "{{ _vm_name }}"
+    folder: "{{ _vm_folder }}"
+  delegate_to: localhost
+  register: reg_virtual_machine_info
+

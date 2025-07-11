@@ -1,0 +1,21 @@
+---
+
+##
+## Display a task header only when "_task_header" is defined OR has some content 
+- name: "{{ _task_header }}"
+  debug:
+    msg: ""
+  when: (_task_header is defined) and (_task_header | length > 0)
+  tags: [print_action]
+
+
+##
+## Delete a virtual machine from LDAP given its distinguish name (dn)
+- community.general.ldap_entry:
+    server_uri: "ldap://{{ LDAP_SERVER }}"
+    validate_certs: no
+    bind_dn: "{{ _username }}"
+    bind_pw: "{{ _password }}"
+    dn: "{{ _dn }}"
+    state: absent
+

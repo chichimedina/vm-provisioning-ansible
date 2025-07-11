@@ -1,0 +1,50 @@
+---
+
+## Let's check first if '{{ vm_name }}' virtual machine exists in vCenter"
+- include_role:
+    name: vmware 
+    tasks_from: vmware_vm_exists.yml
+  vars:
+    _vc_datacenter: "{{ vc_datacenter }}"
+    _vc_hostname: "{{ vc_hostname }}"
+    _vc_username: "{{ vc_username }}"
+    _vc_password: "{{ vc_password }}"
+    _vm_name: "{{ vm_name }}"
+    _vm_folder: "{{ vm_folder }}"
+
+
+## "f_vm_exists" variable is exported by "vmware_vm_exists.yml"
+- fail:
+    msg: "\nVirtual Machine '{{ vm_name }}' does exist in vCenter in the given folder. This provisioning cannot continue.\n"
+  when: f_vm_exists
+
+
+- name: ">>>> Spinning up New Virtual Machine: {{ vm_name_fqdn }}"
+  debug:
+    msg: "\nCPU: {{ vm_num_cpu }}\nMemory: {{ vm_memory }} MB\nFolder: {{ vm_folder }}\nTemplate: {{ vc_template }}\nPuppet Master: {{ f_puppet_master_server }}\n{{ 'Product ID: '~f_win_product_id|first~'\n' if f_win_product_id | length > 0 }}"
+  tags: [print_action]
+
+- include_role:
+    name: vmware 
+    tasks_from: vmware_vm_clone.yml
+  vars:
+    _vc_datacenter: "{{ vc_datacenter }}"
+    _vc_cluster: "{{ vc_cluster }}"
+    _vc_hostname: "{{ vc_hostname }}"
+    _vc_username: "{{ vc_username }}"
+    _vc_password: "{{ vc_password }}"
+    _vc_template: "{{ vc_template }}"
+    _vm_name_fqdn: "{{ vm_name_fqdn }}"
+    _vm_name: "{{ vm_name }}"
+    _vm_folder: "{{ vm_folder }}"
+    _vm_num_cpu: "{{ vm_num_cpu }}"
+    _vm_memory: "{{ vm_memory }}"
+    _vm_notes: "{{ vm_notes }}"
+    _vm_network: "{{ vm_network }}"
+    _vm_net_domain: "{{ vm_net_domain if vm_net_domain is defined else NET_DOMAIN }}"
+    _vm_net_dns: "{{ vm_net_dns if vm_net_dns is defined else NET_DNS }}"
+    _vm_win_product_id: "{{ f_win_product_id }}"
+    _vm_win_org_name: "{{ vm_win_org_name if vm_win_org_name is defined else f_puppet_master_server }}"
+    _vm_puppetmaster_ip: "{{ vm_puppetmaster_ip }}"
+    _vm_custom_settings: "{{ vm_custom_settings }}"
+

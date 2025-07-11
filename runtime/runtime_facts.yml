@@ -1,0 +1,72 @@
+---
+
+## Default facts
+- set_fact:
+    f_vm_exists: None
+    f_vm_network_setup: []
+    f_ldap_entry_exists: None
+    f_record_name_exists: None
+    f_record_data_exists: None
+
+    ## Set current date and time
+    f_datetime: "{{ ansible_date_time.date }} {{ ansible_date_time.time }} {{ ansible_date_time.tz_offset }}"
+
+    ## Set virtual machine name to lowercase
+    f_vm_name: "{{ _vm_name | lower if _vm_name | length > 0 else '' }}"
+
+    ## Set vCenter Datacenter
+    f_vc_datacenter: "{{ _vc_datacenter if _vc_datacenter | length > 0 else VC_DATACENTER }}"
+
+    ## Set vCenter Cluster
+    f_vc_cluster: "{{ _vc_cluster if _vc_cluster | length > 0 else VC_CLUSTER }}"
+
+    ## Set vCenter Hostname
+    f_vc_hostname: "{{ _vc_hostname if _vc_hostname | length > 0 else VC_HOSTNAME }}"
+
+    ## Set vCenter Username
+    f_vc_username: "{{ _vc_username if _vc_username | length > 0 else VC_USERNAME }}"
+
+    ## Set vCenter Password
+    f_vc_password: "{{ _vc_password if _vc_password | length > 0 else '' }}"
+
+
+
+## Double check if "vm_name" has a domain name appended to it. If not, then append it
+- set_fact:
+    f_vm_name_fqdn: "{{ f_vm_name~'.'~NET_DOMAIN | lower if f_vm_name | length > 0 else '' }}"
+  vars:   
+    temp: ".{{ NET_DOMAIN }}$"
+  when: not _vm_name is regex(temp)
+
+
+## Set the list of network adapters to set up for a virtual machine
+- block:
+    - set_fact:
+        f_puppet_master_server: "{{ _puppet_master if _puppet_master | length > 0 else PPMASTER_SERVER }}"
+    - set_fact:
+        f_puppet_master_ip: "{{ lookup('dig', _puppet_master) if (_puppet_master | length > 0) else lookup('dig', PPMASTER_SERVER) }}"
+    - set_fact:
+        f_vm_custom_settings: "{{ 'Yes' if _vm_custom_settings | lower == 'yes' else 'No' }}"
+    - set_fact:
+        f_vm_notes: "{{ VC_VM_NOTES | replace('<<TEMPLATE>>',_template) | replace('<<DATE>>',f_datetime) | replace('<<USER>>',f_vc_username) | replace('<<PPMASTER>>',f_puppet_master_server) | replace('<<NOTES>>',_notes) }}"
+    - set_fact: l_default_net="{{ _default_net if _default_net | length > 0 else VM_DEFAULT_NETWORK }}"
+      when: _default_net is defined
+    - set_fact: f_vm_networks="[ {{ l_default_net }} ]"
+    - set_fact: f_vm_networks="{{ f_vm_networks }} + [ {{ _extra_net }} ]"
+      when: _extra_net | string | length > 0
+    - set_fact: f_template="{{ f_vc_datacenter~'/vm/'~TEMPLATE_LOCATION | json_query(jquery) | first~'/'~_template if not _template is regex('^\/.*') else _template }}"
+      vars:
+        jquery: "[? name==`{{ vc_cluster }}`].location"
+    - set_fact:
+        f_extra_disk: "{{ _extra_disk.split(',') | map('upper') | list }}"
+      when: (_extra_disk is defined) and (_extra_disk | length > 0)
+    - set_fact:
+        f_vm_num_cpu: "{{ _num_cpu if _num_cpu | length > 0 else VC_VM_NUM_CPU }}"
+        f_vm_memory: "{{ _memory if _memory | length > 0 else VC_VM_MEMORY }}"
+        f_template_id: "{{ f_template.split('/') | last }}"
+    - set_fact:
+        f_win_product_id: "{{ MSWINDOWS_PRODUCT_ID | json_query(jquery) }}"
+      vars:   
+        jquery: "[? name==`{{ f_template_id.split('_') | first }}`].key"
+  when: _process == "provisioning"
+

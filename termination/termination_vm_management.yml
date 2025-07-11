@@ -1,0 +1,52 @@
+---
+
+## Let's check first if '{{ f_vm_name_fqdn }}' virtual machine exists in vCenter"
+- include_role:
+    name: vmware 
+    tasks_from: vmware_vm_exists.yml
+  vars:
+    _vc_datacenter: "{{ vc_datacenter }}"
+    _vc_hostname: "{{ vc_hostname }}"
+    _vc_username: "{{ vc_username }}"
+    _vc_password: "{{ vc_password }}"
+    _vm_name: "{{ vm_name }}"
+    _vm_folder: "{{ vm_folder }}"
+
+
+- debug: 
+    msg: "\n[WARNING] No virtual machine '{{ f_vm_name_fqdn }}' found in the given folder in vCenter. No further action needed.\n"
+  when: not f_vm_exists
+  tags: [print_action]
+
+
+## Terminate virtual machine: {{ f_vm_name_fqdn }}"
+- block:
+
+  - name: ">> Powering off Virtual Machine ..."
+    include_role:
+      name: vmware 
+      tasks_from: vmware_vm_power_on_off.yml
+    vars:
+      _vc_hostname: "{{ vc_hostname }}"
+      _vc_username: "{{ vc_username }}"
+      _vc_password: "{{ vc_password }}"
+      _vm_name: "{{ f_vm_name_fqdn }}"
+      _vm_folder: "{{ vm_folder }}"
+      _vm_power_state: "{{ VC_VM_POWER_OFF_STATE }}"
+    tags: [print_action]
+
+  - name: ">> Destroying Virtual Machine: {{ f_vm_name_fqdn }}"
+    include_role:
+      name: vmware 
+      tasks_from: vmware_vm_destroy.yml
+    vars:
+      _vc_datacenter: "{{ vc_datacenter }}"
+      _vc_hostname: "{{ vc_hostname }}"
+      _vc_username: "{{ vc_username }}"
+      _vc_password: "{{ vc_password }}"
+      _vm_name: "{{ vm_name }}"
+      _vm_folder: "{{ vm_folder }}"
+    tags: [print_action]
+
+  when: f_vm_exists
+

@@ -1,0 +1,20 @@
+---
+
+##
+## Power On/Off a Virtual Machine 
+## Possible values for "state" property are:
+## - powered-on
+## - powered-off
+## This function identifies the virtual machine to work on by specifing _either_ of these parameters:
+##   vmoid         : If "moid" isn't set, then "name" and "folder" are expected to be set
+##   name / folder : If "name" AND "folder" aren't set, then "moid" is expected to be set
+- vmware_guest_powerstate:
+    hostname: "{{ _vc_hostname }}"
+    username: "{{ _vc_username }}"
+    password: "{{ _vc_password }}"
+    validate_certs: no
+    name: "{{ _vm_name }}"
+    folder: "{{ _vm_folder }}"
+    state: "{{ _vm_power_state }}"
+  delegate_to: localhost
+

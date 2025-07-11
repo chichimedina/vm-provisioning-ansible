@@ -1,0 +1,55 @@
+---
+
+- name: ">> Setting up extra disk #{{ master_index + 1 }} ({{ master_item }}):"
+  debug:
+    msg: ""
+  tags: [print_action]
+
+
+## Local facts
+- set_fact:
+    l_ds: []
+    l_vm_os_datastore: "{{ reg_new_virtual_machine.instance.hw_datastores | first }}"
+
+
+- include_role:
+    name: vmware 
+    tasks_from: vmware_ds_get_info.yml
+  vars:   
+    _vc_hostname: "{{ vc_hostname }}"
+    _vc_username: "{{ vc_username }}"
+    _vc_password: "{{ vc_password }}"
+    _vc_cluster: "{{ vc_cluster }}"
+
+
+- set_fact: l_ds="{{ l_ds | default([]) }} + [ {'name':'{{ item.name }}','ratio':'{{ (item.freeSpace / item.capacity) * 100 }}' } ]"
+  loop: "{{ reg_datastore_info.datastores | list }}"
+
+
+- set_fact: l_ds="{{ l_ds | rejectattr('name', 'match', l_vm_os_datastore) | list  }}"
+
+
+- set_fact: l_ds="{{ (l_ds | sort(attribute='ratio'))[-1]['name'] }}"
+
+
+- name: ">>>> Datastore to use for this extra disk:"
+  debug:
+    msg: "Name: {{ l_ds }}"
+  tags: [print_action]
+
+
+- name: ">>>> Add extra disk to Virtual Machine ..."
+  include_role:
+    name: vmware 
+    tasks_from: vmware_vm_add_disk.yml
+  vars:
+    _vc_datacenter: "{{ vc_datacenter }}"
+    _vc_hostname: "{{ vc_hostname }}"
+    _vc_username: "{{ vc_username }}"
+    _vc_password: "{{ vc_password }}"
+    _vm_moid: "{{ reg_new_virtual_machine.instance.moid }}"
+    _size: "{{ master_item }}"
+    _scsi_controller: "{{ master_index + 1 }}"
+    _unit_number: 0
+    _datastore: "{{ l_ds }}"
+  tags: [print_action]

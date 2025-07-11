@@ -1,0 +1,14 @@
+---
+
+- include_role:
+    name: rhsatellite
+    tasks_from: rhsatellite_unregister.yml
+  vars:
+    _username: "{{ username }}"
+    _password: "{{ password }}"
+    _vm_name: "{{ vm_name }}"
+
+
+- debug:
+    msg: "{{ '[DONE]' if reg_rhsatellite_unregistration.status == 200 else '\n ** WARNING ** ' ~ reg_rhsatellite_unregistration.json.error.message ~ '\n' }}"
+  tags: [print_action]

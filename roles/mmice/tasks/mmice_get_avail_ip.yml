@@ -1,0 +1,37 @@
+---
+
+- set_fact: available_network=[]
+
+
+- uri:
+    url: "{{ MM_URL }}/Ranges/{{ item }}"
+    user: "{{ _username }}"
+    password: "{{ _password }}"
+    force_basic_auth: yes
+    validate_certs: no
+    method: GET
+  register: reg_net_info
+  loop: "{{ _networks | json_query(jquery) | first }}"
+  vars:   
+    jquery: "[? name==`{{ _vm_network }}`].subnets[*].name"
+
+
+- set_fact: available_network="{{ available_network | default([]) }} + [ '{{ item.json.result.range.name }}' ]"
+  when: item.json.result.range.utilizationPercentage | int < 100
+  loop: "{{ reg_net_info.results }}"
+
+
+- fail:
+    msg: "\nNo subnets with available IP addresses were found. This automation cannot continue.\n"
+  when: (available_network | length == 0) or (available_network is undefined)
+
+
+- uri:
+    url: "{{ MM_URL }}/Ranges/{{ available_network | first }}/NextFreeAddress?ping={{ mmice_ping }}&temporaryClaimTime={{ mmice_claim_time }}"
+    user: "{{ _username }}"
+    password: "{{ _password }}"
+    force_basic_auth: yes
+    validate_certs: no
+    method: GET
+  register: reg_vm_ip_address
+

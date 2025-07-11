@@ -1,0 +1,23 @@
+---
+
+##
+## Determine the existance of a Virtual Machine
+- vmware_guest_info:
+    datacenter: "{{ _vc_datacenter }}"
+    hostname: "{{ _vc_hostname }}"
+    username: "{{ _vc_username }}"
+    password: "{{ _vc_password }}"
+    validate_certs: no
+    schema: vsphere
+    name: "{{ _vm_name }}"
+    folder: "{{ _vm_folder }}"
+  delegate_to: localhost
+  register: reg_virtual_machine_object
+  failed_when: (reg_virtual_machine_object.msg is defined) and (reg_virtual_machine_object.msg is not regex(non_existing_string))
+
+  vars:
+    non_existing_string: "^Unable to gather information for non-existing VM"
+
+
+- set_fact: f_vm_exists="{{ False if reg_virtual_machine_object.instance is undefined else True }}"
+

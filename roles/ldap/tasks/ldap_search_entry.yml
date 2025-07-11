@@ -1,0 +1,32 @@
+---
+
+##
+## Display a task header only when "_task_header" is defined OR has some content 
+- name: "{{ _task_header }}"
+  debug:
+    msg: ""
+  when: (_task_header is defined) and (_task_header | length > 0)
+  tags: [print_action]
+
+
+##
+## Look up an entry in LDAP given its distinguish name (dn)
+## Returns:
+##   True (via "f_ldap_entry_exists"): If the entry was found
+##   False (via "f_ldap_entry_exists"): If the entry was not found
+##   Object (via "reg_ldap_entry_object"): Object (and attributes) if the entry was found
+- community.general.ldap_search:
+    server_uri: "ldap://{{ LDAP_SERVER }}"
+    validate_certs: no
+    bind_dn: "{{ _username }}"
+    bind_pw: "{{ _password }}"
+    dn: "{{ _dn }}"
+  register: reg_ldap_entry_object
+  failed_when: (reg_ldap_entry_object.msg is defined) and (reg_ldap_entry_object.msg is not regex(non_existing_string))
+
+  vars:
+    non_existing_string: "^Base not found:"
+
+
+- set_fact: f_ldap_entry_exists="{{ False if reg_ldap_entry_object.results is not defined else True }}"
+

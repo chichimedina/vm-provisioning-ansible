@@ -1,0 +1,32 @@
+---
+
+##
+## Clone a VMware template to create a new Virtual Machine
+- vmware_guest:
+    datacenter: "{{ _vc_datacenter }}"
+    hostname: "{{ _vc_hostname }}"
+    cluster: "{{ _vc_cluster }}"
+    username: "{{ _vc_username }}"
+    password: "{{ _vc_password }}"
+    validate_certs: no
+    name: "{{ _vm_name_fqdn }}"
+    folder: "{{ _vm_folder }}"
+    annotation: "{{ _vm_notes }}"
+    template: "{{ _vc_template }}"
+    hardware:
+      num_cpus: "{{ _vm_num_cpu }}"
+      memory_mb: "{{ _vm_memory }}"
+      hotadd_cpu: True
+      hotremove_cpu: True
+      hotadd_memory: True
+    networks: "{{ _vm_network }}"
+    customization:
+      hostname: "{{ _vm_name }}"
+      domain: "{{ _vm_net_domain }}"
+      dns_servers: "{{ _vm_net_dns + [ _vm_puppetmaster_ip ] }}"
+      productid: "{{ _vm_win_product_id }}"
+      orgname: "{{ _vm_win_org_name }}"
+    customvalues: "{{ VC_VM_CUSTOM_PROPERTIES if _vm_custom_settings else VC_VM_CUSTOM_PROPERTIES_DUMMY }}"
+  delegate_to: localhost
+  register: reg_new_virtual_machine
+

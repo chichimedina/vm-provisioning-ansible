@@ -1,0 +1,39 @@
+---
+
+## Check #1: Does NAME:'{{ record_name }}' record exist?"
+- include_role:
+    name: mmice 
+    tasks_from: mmice_record_name_exists.yml
+  vars:
+    _username: "{{ username }}"
+    _password: "{{ password }}"
+    _record_name: "{{ record_name }}"
+
+
+## Check #2: Does DATA:'{{ record_data }}' record exists?"
+- include_role:
+    name: mmice
+    tasks_from: mmice_record_data_exists.yml
+  vars:
+    _username: "{{ username }}"
+    _password: "{{ password }}"
+    _record_data: "{{ record_data }}"
+
+
+- name: ">>>> Creating extra DNS record by using following data:"
+  debug:  
+    msg: "\nName: {{ record_name }}\nData: {{ record_data }}\nType: {{ record_type }}\n"
+  tags: [print_action]
+
+
+- include_role:
+    name: mmice
+    tasks_from: mmice_register.yml
+  vars:
+    _username: "{{ username }}"
+    _password: "{{ password }}"
+    _record_name: "{{ record_name }}"
+    _record_type: "{{ record_type }}"
+    _record_data: "{{ record_data }}"
+  when: not f_record_name_exists and not f_record_data_exists
+
